@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 import datetime
 
 def task_1_exp():
-	number_querries = 1200
+	number_querries = 120
 	warmup_threshold = 20
-	lambdas = [0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5] # TO CHANGE
+	lambdas = [i/100 for i in range(5, 55, 5)] # TO CHANGE
 	number_lambdas = len(lambdas)
 	waiting_time_q1 = np.zeros(number_lambdas)
 	waiting_time_q2 = np.zeros(number_lambdas)
