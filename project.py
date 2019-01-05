@@ -1,11 +1,15 @@
-#import mysql.connector as mc
+import mysql.connector as mc
 import numpy as np
 import time
 from threading import Thread
 import matplotlib.pyplot as plt
 import datetime
 
+def log(str):
+	print(str)
+
 def task_1_exp():
+	log('task 1')
 	number_querries = 120
 	warmup_threshold = 20
 	lambdas = [i/100 for i in range(5, 55, 5)] # TO CHANGE
@@ -22,9 +26,9 @@ def task_1_exp():
 		result_q3 = [ ]
 		time_begining_exp = time.time()
 		for t in wait_times:
-			thread_q1 = Thread(target=test, args=(1, result_q1))
-			thread_q2 = Thread(target=test, args=(2, result_q2))
-			thread_q3 = Thread(target=test, args=(3, result_q3))
+			thread_q1 = Thread(target=connection_and_querying, args=(1, result_q1))
+			thread_q2 = Thread(target=connection_and_querying, args=(2, result_q2))
+			thread_q3 = Thread(target=connection_and_querying, args=(3, result_q3))
 			time.sleep(t)
 			thread_q1.start()
 			thread_q2.start()
@@ -48,17 +52,6 @@ def task_1_exp():
 	plt.legend()
 	plt.grid(True)
 	plt.show()
-
-def test(query_number,result):
-	if query_number == 1:
-		t = np.random.random()
-	elif query_number == 2:
-		t = np.random.random()
-	elif query_number == 3:
-		t = np.random.random()
-	else:
-		print('Querry number {0} not handled'.format(query_number))
-	result.append(query_number*t)
 
 def connection_and_querying(query_number,result):
 	try:
@@ -94,6 +87,7 @@ def connection_and_querying(query_number,result):
 	except mc.Error as err:
 		print(err)
 	else:
+		log('closing')
 		cursor.close()
 		cnx.close()
 		result.append(time_receive-time_send)
