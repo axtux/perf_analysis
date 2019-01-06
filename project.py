@@ -15,28 +15,20 @@ def task_1_exp():
 	number_querries = 120
 	warmup_threshold = 20
 	lambdas = [i/100 for i in range(5, 55, 5)] # TO CHANGE
-	number_lambdas = len(lambdas)
-
-	#unused now
-	res_time = np.zeros(number_lambdas)
-	queries_per_sec = np.zeros(number_lambdas)
 
 	plt.figure()
-	for i in range(number_lambdas):
-		print('Currently proceding to lambdas : {0}'.format(lambdas[i]))
-		wait_times = np.random.exponential(scale=lambdas[i],size=number_querries)
+	for l in lambdas:
+		print('Currently proceding to lambda: '+str(l))
+		wait_times = np.random.exponential(scale=l,size=number_querries)
 		for q, c in queries:
 			label = 'Query type '+str(q)
-			log(label)
+			print(label+': ', end='', flush=True)
 			(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
+			print(str(queries_per_second)+'q/s, avg '+str(res_time)+'ms')
 			plt.plot(queries_per_second, res_time, c=c, marker='.', label=label)
 
-	#plt.figure()
-	#plt.plot(number_querries_per_second,waiting_time_q1, c='tomato', marker='.', label='Query type 1')
-	#plt.plot(number_querries_per_second,waiting_time_q2, c='darkslateblue', marker='.', label='Query type 2')
-	#plt.plot(number_querries_per_second,waiting_time_q3, c='darkturquoise', marker='.', label='Querry type 3')
 	plt.ylabel('Average response time')
-	plt.xlabel('Number of querries per second')
+	plt.xlabel('Queries per second')
 	plt.legend()
 	plt.grid(True)
 	plt.show()
@@ -57,6 +49,7 @@ def threaded_queries(q, wait_times, warmup_threshold):
 	for thread in threads:
 		thread.join()
 	# make stats
+	#log(results)
 	res_time = np.mean(results[warmup_threshold:])
 	queries_per_sec = n/(end_time-start_time)
 	return (queries_per_sec, res_time)
@@ -100,7 +93,7 @@ def query(q, params=()):
 		#log('start time: '+str(start_time))
 		cursor.execute(q, params)
 		cnx.commit()
-	except (mc.errors.InternalError, mc.errors.DatabaseError, mc.errors.OperationalError) as err:
+	except (mc.errors.DatabaseError, mc.errors.OperationalError) as err:
 		print(err)
 	finally:
 		#log('closing')
