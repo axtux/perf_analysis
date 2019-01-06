@@ -86,7 +86,7 @@ def connection_and_querying(query_number,result):
 
 		else:
 			print('Querry number {0} not handled'.format(query_number))
-	except (mc.errors.InternalError, mc.errors.DatabaseError, mc.errors.OperationError) as err:
+	except (mc.errors.InternalError, mc.errors.DatabaseError, mc.errors.OperationalError) as err:
 		print(err)
 	finally:
 		log('closing')
