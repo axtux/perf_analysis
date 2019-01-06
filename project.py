@@ -10,51 +10,58 @@ def log(s):
 
 def task_1_exp():
 	log('task 1')
+	queries = [(1, 'tomato'), (2, 'darkslateblue'), (3, 'darkturquoise')]
+
 	number_querries = 120
 	warmup_threshold = 20
 	lambdas = [i/100 for i in range(5, 55, 5)] # TO CHANGE
 	number_lambdas = len(lambdas)
-	waiting_time_q1 = np.zeros(number_lambdas)
-	waiting_time_q2 = np.zeros(number_lambdas)
-	waiting_time_q3 = np.zeros(number_lambdas)
-	number_querries_per_second = np.zeros(number_lambdas)
-	for i in range(len(lambdas)):
-		print('Currently proceding to lambdas : {0}'.format(lambdas[i]))
-		wait_times = np.random.exponential(scale=lambdas[i],size=number_querries)
-		result_q1 = [ ]
-		result_q2 = [ ]
-		result_q3 = [ ]
-		time_begining_exp = time.time()
-		for t in wait_times:
-			thread_q1 = Thread(target=connection_and_querying, args=(1, result_q1))
-			thread_q2 = Thread(target=connection_and_querying, args=(2, result_q2))
-			thread_q3 = Thread(target=connection_and_querying, args=(3, result_q3))
-			time.sleep(t)
-			thread_q1.start()
-			thread_q2.start()
-			thread_q3.start()
-		time_end_exp = time.time()
-		number_querries_per_second[i] = number_querries/(time_end_exp-time_begining_exp)
 
-		for waiting_time in result_q1[warmup_threshold:]:
-			waiting_time_q1[i]+= waiting_time/(number_querries-warmup_threshold)
-		for waiting_time in result_q2[warmup_threshold:]:
-			waiting_time_q2[i]+= waiting_time/(number_querries-warmup_threshold)
-		for waiting_time in result_q3[warmup_threshold:]:
-			waiting_time_q3[i]+= waiting_time/(number_querries-warmup_threshold)
+	#unused now
+	res_time = np.zeros(number_lambdas)
+	queries_per_sec = np.zeros(number_lambdas)
 
 	plt.figure()
-	plt.plot(number_querries_per_second,waiting_time_q1, c='tomato', marker='.', label='Query type 1')
-	plt.plot(number_querries_per_second,waiting_time_q2, c='darkslateblue', marker='.', label='Query type 2')
-	plt.plot(number_querries_per_second,waiting_time_q3, c='darkturquoise', marker='.', label='Querry type 3')
+	for i in range(number_lambdas):
+		print('Currently proceding to lambdas : {0}'.format(lambdas[i]))
+		wait_times = np.random.exponential(scale=lambdas[i],size=number_querries)
+		for q, c in queries:
+			(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
+			plt.plot(queries_per_second, res_time, c=c, marker='.', label='Query type '+str(q))
+
+	#plt.figure()
+	#plt.plot(number_querries_per_second,waiting_time_q1, c='tomato', marker='.', label='Query type 1')
+	#plt.plot(number_querries_per_second,waiting_time_q2, c='darkslateblue', marker='.', label='Query type 2')
+	#plt.plot(number_querries_per_second,waiting_time_q3, c='darkturquoise', marker='.', label='Querry type 3')
 	plt.ylabel('Average response time')
 	plt.xlabel('Number of querries per second')
 	plt.legend()
 	plt.grid(True)
 	plt.show()
 
-def thread_query(n, result, i):
-	result[i] = query_n(n)
+def threaded_queries(q, wait_times, warmup_threshold):
+	n = len(wait_times)
+	results = np.zeros(n)
+	threads = []
+	# start requests
+	start_time = time.time()
+	for i, t in zip(range(n), wait_times):
+		thread = Thread(target=thread_query, args=(q, results, i))
+		threads.append(thread)
+		thread.start()
+		time.sleep(t)
+	end_time = time.time()
+	# wait for requests to finish
+	for thread in threads:
+		thread.join()
+	# make stats
+	res_time = np.mean(results[warmup_threshold:])
+	queries_per_sec = n/(end_time-start_time)
+	return (queries_per_sec, res_time)
+
+
+def thread_query(n, results, i):
+	results[i] = query_n(n)
 
 def query_n(n):
 	if n == 1:
