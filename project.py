@@ -26,8 +26,10 @@ def task_1_exp():
 		print('Currently proceding to lambdas : {0}'.format(lambdas[i]))
 		wait_times = np.random.exponential(scale=lambdas[i],size=number_querries)
 		for q, c in queries:
+			label = 'Query type '+str(q)
+			log(label)
 			(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
-			plt.plot(queries_per_second, res_time, c=c, marker='.', label='Query type '+str(q))
+			plt.plot(queries_per_second, res_time, c=c, marker='.', label=label)
 
 	#plt.figure()
 	#plt.plot(number_querries_per_second,waiting_time_q1, c='tomato', marker='.', label='Query type 1')
@@ -95,17 +97,17 @@ def query(q, params=()):
 		# see https://stackoverflow.com/questions/29772337/python-mysql-connector-unread-result-found-when-using-fetchone
 		cursor = cnx.cursor(buffered=True)
 		start_time = time.time()
-		log('start time: '+str(start_time))
+		#log('start time: '+str(start_time))
 		cursor.execute(q, params)
 		cnx.commit()
 	except (mc.errors.InternalError, mc.errors.DatabaseError, mc.errors.OperationalError) as err:
 		print(err)
 	finally:
-		log('closing')
+		#log('closing')
 		cursor.close()
 		cnx.close()
 		end_time = time.time()
-		log('end time: '+str(end_time))
+		#log('end time: '+str(end_time))
 		return end_time-start_time
 
 def clean():
