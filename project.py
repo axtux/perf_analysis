@@ -56,7 +56,9 @@ def task_1_exp():
 def connection_and_querying(query_number,result):
 	try:
 		cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='192.168.0.174', database='employees')
-		cursor = cnx.cursor()
+		# buffered to avoid "Unread result found"
+		# see https://stackoverflow.com/questions/29772337/python-mysql-connector-unread-result-found-when-using-fetchone
+		cursor = cnx.cursor(buffered=True)
 		if query_number == 1:
 			query = ('SELECT AVG(t.salary) FROM (SELECT salary FROM employees.salaries LIMIT %s OFFSET %s) as t')
 			numberOfRows = int(np.random.random()*1000)
@@ -67,7 +69,7 @@ def connection_and_querying(query_number,result):
 
 		elif query_number == 2:
 			query = ('SELECT * FROM employees.salaries LIMIT %s OFFSET %s')
-			numberOfRows = 1000000
+			numberOfRows = int(np.random.random()*1000)
 			startRow = int(np.random.random()*2000000)
 			time_send = time.time()
 			cursor.execute(query, (numberOfRows, startRow))
@@ -84,9 +86,9 @@ def connection_and_querying(query_number,result):
 
 		else:
 			print('Querry number {0} not handled'.format(query_number))
-	except mc.Error as err:
+	except (mc.errors.InternalError, mc.errors.DatabaseError, mc.errors.OperationError) as err:
 		print(err)
-	else:
+	finally:
 		log('closing')
 		cursor.close()
 		cnx.close()
