@@ -5,8 +5,8 @@ from threading import Thread
 import matplotlib.pyplot as plt
 import datetime
 
-def log(str):
-	print(str)
+def log(s):
+	print(s)
 
 def task_1_exp():
 	log('task 1')
@@ -53,46 +53,56 @@ def task_1_exp():
 	plt.grid(True)
 	plt.show()
 
-def connection_and_querying(query_number,result):
+def thread_query(n, result, i):
+	result[i] = query_n(n)
+
+def query_n(n):
+	if n == 1:
+		q = 'SELECT AVG(t.salary) FROM (SELECT salary FROM employees.salaries LIMIT %s OFFSET %s) as t'
+		numberOfRows = np.random.randint(100, 1000)
+		startRow = np.random.randint(1, 2844047-numberOfRows) # count = 2844047
+		params = (numberOfRows, startRow)
+
+	elif n == 2:
+		q = 'SELECT * FROM employees.salaries LIMIT %s OFFSET %s'
+		numberOfRows = np.random.randint(10, 100)
+		startRow = np.random.randint(1, 2844047-numberOfRows) # count = 2844047
+		params = (numberOfRows, startRow)
+
+	elif n == 3:
+		q = 'INSERT INTO employees.salaries VALUES (%s,123,%s,%s)'
+		from_where = datetime.date(1999, 1, 1) # TODO MAYBE CHANGE THAT.
+		to_where = datetime.date(1999, 12, 31)
+		employeeNumber = np.random.randint(10001, 500000)
+		params = (employeeNumber, from_where, to_where)
+
+	else:
+		print('Querry number {0} not handled'.format(n))
+		return
+	return query(q, params)
+
+def query(q, params=()):
 	try:
 		cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='192.168.0.174', database='employees')
 		# buffered to avoid "Unread result found"
 		# see https://stackoverflow.com/questions/29772337/python-mysql-connector-unread-result-found-when-using-fetchone
 		cursor = cnx.cursor(buffered=True)
-		if query_number == 1:
-			query = ('SELECT AVG(t.salary) FROM (SELECT salary FROM employees.salaries LIMIT %s OFFSET %s) as t')
-			numberOfRows = int(np.random.random()*1000)
-			startRow = int(np.random.random()*2000000)
-			time_send = time.time()
-			cursor.execute(query, (numberOfRows, startRow))
-			time_receive = time.time()
-
-		elif query_number == 2:
-			query = ('SELECT * FROM employees.salaries LIMIT %s OFFSET %s')
-			numberOfRows = int(np.random.random()*1000)
-			startRow = int(np.random.random()*2000000)
-			time_send = time.time()
-			cursor.execute(query, (numberOfRows, startRow))
-			time_receive = time.time()
-
-		elif query_number == 3:
-			query = ('INSERT INTO employees.salaries VALUE (%s,123,%s,%s)')
-			from_where = datetime.date(1999, 1, 1) # MAYBE CHANGE THAT.
-			to_where = datetime.date(1999, 12, 31)
-			employeeNumber = 10001+int(np.random.random()*100000)
-			time_send = time.time()
-			cursor.execute(query, (employeeNumber, from_where, to_where))
-			time_receive = time.time()
-
-		else:
-			print('Querry number {0} not handled'.format(query_number))
+		start_time = time.time()
+		log('start time: '+str(start_time))
+		cursor.execute(q, params)
+		cnx.commit()
 	except (mc.errors.InternalError, mc.errors.DatabaseError, mc.errors.OperationalError) as err:
 		print(err)
 	finally:
 		log('closing')
 		cursor.close()
 		cnx.close()
-		result.append(time_receive-time_send)
+		end_time = time.time()
+		log('end time: '+str(end_time))
+		return end_time-start_time
+
+def clean():
+	query('DELETE FROM employees.salaries WHERE salary=123')
 
 if __name__ == "__main__":
 	task_1_exp()
