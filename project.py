@@ -26,6 +26,8 @@ def task_1_exp():
 			(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
 			print(str(queries_per_second)+'q/s, avg '+str(res_time)+'ms')
 			plt.plot(queries_per_second, res_time, c=c, marker='.', label=label)
+			# let server catch up
+			time.sleep(5)
 
 	plt.ylabel('Average response time')
 	plt.xlabel('Queries per second')
@@ -61,7 +63,7 @@ def thread_query(n, results, i):
 def query_n(n):
 	if n == 1:
 		q = 'SELECT AVG(t.salary) FROM (SELECT salary FROM employees.salaries LIMIT %s OFFSET %s) as t'
-		numberOfRows = np.random.randint(100, 1000)
+		numberOfRows = np.random.randint(10, 100)
 		startRow = np.random.randint(1, 2844047-numberOfRows) # count = 2844047
 		params = (numberOfRows, startRow)
 
