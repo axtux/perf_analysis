@@ -8,13 +8,14 @@ import datetime
 def log(s):
 	print(s)
 
-def task_1_exp():
+def experiment():
 	log('task 1')
 	queries = [(1, 'tomato'), (2, 'darkslateblue'), (3, 'darkturquoise')]
+	queries = [(1, 'tomato')]
 
 	number_querries = 120
 	warmup_threshold = 20
-	lambdas = [0.01, 0.03, 0.05, 0.1, 0.3, 0.5]
+	lambdas = [0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 1]
 
 	plt.figure()
 	for l in lambdas:
@@ -23,7 +24,8 @@ def task_1_exp():
 		for q, c in queries:
 			label = 'Query type '+str(q)
 			print(label+': ', end='', flush=True)
-			(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
+			#(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
+			(queries_per_second, res_time) = threaded_queue(q, wait_times, warmup_threshold)
 			print('{:.3f}q/s, avg {:.3f}s'.format(queries_per_second, res_time))
 			plt.plot(queries_per_second, res_time, c=c, marker='.', label=label)
 			# let server catch up
@@ -31,6 +33,15 @@ def task_1_exp():
 
 	plt.ylabel('Average response time')
 	plt.xlabel('Queries per second')
+	plt.legend()
+	plt.grid(True)
+	plt.show()
+
+def plot_times(times):
+	plt.figure()
+	plt.plot(range(len(times)), times, c='tomato', marker='.', label='Times')
+	plt.ylabel('Time')
+	plt.xlabel('Query')
 	plt.legend()
 	plt.grid(True)
 	plt.show()
@@ -54,6 +65,45 @@ def threaded_queries(q, wait_times, warmup_threshold):
 	#log(results)
 	res_time = np.mean(results[warmup_threshold:])
 	queries_per_sec = n/(end_time-start_time)
+	return (queries_per_sec, res_time)
+
+def threaded_queue(q, wait_times, warmup_threshold):
+	n = len(wait_times)
+	results = np.zeros(n)
+	waiting_time = np.zeros(n)
+	service_time = np.zeros(n)
+
+	cumulative_wait_times = []
+	acc = 0
+	for t in wait_times:
+		acc += t
+		cumulative_wait_times.append(acc)
+
+	#plot_times(wait_times)
+	#plot_times(cumulative_wait_times)
+	# start requests
+	start_time = time.time()
+	for i, t in zip(range(n), cumulative_wait_times):
+		passed = time.time()-start_time
+		to_wait = t-passed
+		if to_wait > 0:
+			time.sleep(to_wait)
+			waiting_time[i] = 0
+		else:
+			waiting_time[i] = -to_wait
+
+		service_time[i] = query_n(q)
+		results[i] = service_time[i] + waiting_time[i]
+
+	# make stats
+	log(waiting_time)
+	log(service_time)
+
+	avg_waiting_time = np.mean(waiting_time[warmup_threshold:])
+	avg_service_time = np.mean(service_time[warmup_threshold:])
+	print('awt {:.3f}s, ast {:.3f}s, '.format(avg_waiting_time, avg_service_time), end='')
+	res_time = np.mean(results[warmup_threshold:])
+	queries_per_sec = n/cumulative_wait_times[-1:][0]
 	return (queries_per_sec, res_time)
 
 
@@ -110,4 +160,4 @@ def clean():
 	query('DELETE FROM employees.salaries WHERE salary=123')
 
 if __name__ == "__main__":
-	task_1_exp()
+	experiment()
