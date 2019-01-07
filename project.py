@@ -14,7 +14,7 @@ def task_1_exp():
 
 	number_querries = 120
 	warmup_threshold = 20
-	lambdas = [i/100 for i in range(5, 55, 5)] # TO CHANGE
+	lambdas = [0.01, 0.03, 0.05, 0.1, 0.3, 0.5]
 
 	plt.figure()
 	for l in lambdas:
@@ -24,7 +24,7 @@ def task_1_exp():
 			label = 'Query type '+str(q)
 			print(label+': ', end='', flush=True)
 			(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
-			print(str(queries_per_second)+'q/s, avg '+str(res_time)+'ms')
+			print('{:.3f}q/s, avg {:.3f}s'.format(queries_per_second, res_time))
 			plt.plot(queries_per_second, res_time, c=c, marker='.', label=label)
 			# let server catch up
 			time.sleep(5)
@@ -88,6 +88,7 @@ def query_n(n):
 def query(q, params=()):
 	try:
 		cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='192.168.0.174', database='employees')
+		#cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='10.0.0.10', port=4242, database='employees')
 		# buffered to avoid "Unread result found"
 		# see https://stackoverflow.com/questions/29772337/python-mysql-connector-unread-result-found-when-using-fetchone
 		cursor = cnx.cursor(buffered=True)
