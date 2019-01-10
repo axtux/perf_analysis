@@ -13,7 +13,7 @@ def log(s):
 def experiment():
 	log('task 1')
 	queries = [(1, 'tomato'), (2, 'darkslateblue'), (3, 'darkturquoise')]
-	queries = [(30, 'tomato')]
+	queries = [(4, 'tomato')]
 
 	number_querries = 70
 	warmup_threshold = 20
@@ -27,7 +27,7 @@ def experiment():
 			label = 'Query type '+str(q)
 			print(label+': ', end='', flush=True)
 			#(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
-			(queries_per_second, res_time) = threaded_queue(q, wait_times, warmup_threshold)
+			(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
 			print('{:.3f}q/s, avg {:.3f}s'.format(queries_per_second, res_time))
 			plt.plot(queries_per_second, res_time, c=c, marker='.', label=label)
 			# let server catch up
@@ -145,37 +145,56 @@ def query_n(n):
 		employeeNumber = randint(10001, 500000)
 		params = (employeeNumber, from_where, to_where)
 
-	elif n == 30:
-		acc = 0
-		for i in range(10):
-			acc += query_n(3)
-		return acc
+	elif n == 4:
+		q = 'INSERT INTO employees.employees VALUES (%s, %s, %s, %s, %s, %s)'
+		emp_no = randint(500000, 2147483647)
+		birth_date = str(np.datetime64('1950-01-01') + randint(365*50))
+		first_name = 'FirstName'
+		last_name = 'LastName'
+		gender = str(np.random.choice(('M', 'F')))
+		hire_date = str(np.datetime64('1985-01-01') + randint(365*30))
+		params = (emp_no, birth_date, first_name, last_name, gender, hire_date)
 
 	else:
 		print('Querry number {0} not handled'.format(n))
 		return
 	return query(q, params)
 
+def emp_values():
+	emp_no = randint(500000, 2147483647)
+	birth_date = str(np.datetime64('1950-01-01') + randint(365*50))
+	first_name = 'FirstName'
+	last_name = 'LastName'
+	gender = str(np.random.choice(('M', 'F')))
+	hire_date = str(np.datetime64('1985-01-01') + randint(365*30))
+	return '({0}, {1}, "{2}", "{3}", "{4}", {5})'.format(emp_no, birth_date, first_name, last_name, gender, hire_date)
+
 def query(q, params=()):
-	try:
-		cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='192.168.0.174', database='employees')
-		#cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='10.0.0.10', port=4242, database='employees')
-		# buffered to avoid "Unread result found"
-		# see https://stackoverflow.com/questions/29772337/python-mysql-connector-unread-result-found-when-using-fetchone
-		cursor = cnx.cursor(buffered=True)
-		start_time = time.time()
-		#log('start time: '+str(start_time))
-		cursor.execute(q, params)
-		cnx.commit()
-	except (mc.errors.DatabaseError, mc.errors.OperationalError) as err:
-		print(err)
-	finally:
-		#log('closing')
-		cursor.close()
-		cnx.close()
-		end_time = time.time()
-		#log('end time: '+str(end_time))
-		return end_time-start_time
+	cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='192.168.0.174', database='employees')
+	#cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='10.0.0.10', port=4242, database='employees')
+	# buffered to avoid "Unread result found"
+	# see https://stackoverflow.com/questions/29772337/python-mysql-connector-unread-result-found-when-using-fetchone
+	cursor = cnx.cursor(buffered=True)
+	start_time = time.time()
+	#log('start time: '+str(start_time))
+	cursor.execute(q, params)
+	cnx.commit()
+
+	#log('closing')
+	cursor.close()
+	cnx.close()
+	end_time = time.time()
+	#log('end time: '+str(end_time))
+	return end_time-start_time
+
+def last_emp_no():
+	cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='192.168.0.174', database='employees')
+	cursor = cnx.cursor()
+	cursor.execute('SELECT `emp_no` FROM `employees` ORDER BY `emp_no` DESC LIMIT 1')
+	emp_no = cursor.fetchone()[0]
+	cursor.close()
+	cnx.close()
+	return emp_no
 
 def clean():
 	query('DELETE FROM employees.salaries WHERE salary=123')
