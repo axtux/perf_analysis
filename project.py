@@ -13,7 +13,6 @@ def log(s):
 def experiment():
 	log('task 1')
 	queries = [(1, 'tomato'), (2, 'darkslateblue'), (3, 'darkturquoise')]
-	queries = [(4, 'tomato')]
 
 	number_querries = 70
 	warmup_threshold = 20
@@ -139,21 +138,12 @@ def query_n(n):
 		params = (numberOfRows, startRow)
 
 	elif n == 3:
-		q = 'INSERT INTO employees.salaries VALUES (%s,123,%s,%s)'
-		from_where = str(np.datetime64('1985-01-01') + randint(365*20))
-		to_where = str(np.datetime64('1985-01-01') + randint(365*20))
-		employeeNumber = randint(10001, 500000)
-		params = (employeeNumber, from_where, to_where)
-
-	elif n == 4:
-		q = 'INSERT INTO employees.employees VALUES (%s, %s, %s, %s, %s, %s)'
-		emp_no = randint(500000, 2147483647)
-		birth_date = str(np.datetime64('1950-01-01') + randint(365*50))
-		first_name = 'FirstName'
-		last_name = 'LastName'
-		gender = str(np.random.choice(('M', 'F')))
-		hire_date = str(np.datetime64('1985-01-01') + randint(365*30))
-		params = (emp_no, birth_date, first_name, last_name, gender, hire_date)
+		values = emp_values()
+		# insert multiple entries in one request
+		for i in range(100):
+			values += ', '+emp_values()
+		q = 'INSERT INTO employees.employees VALUES '+values
+		params = ()
 
 	else:
 		print('Querry number {0} not handled'.format(n))
@@ -167,24 +157,29 @@ def emp_values():
 	last_name = 'LastName'
 	gender = str(np.random.choice(('M', 'F')))
 	hire_date = str(np.datetime64('1985-01-01') + randint(365*30))
-	return '({0}, {1}, "{2}", "{3}", "{4}", {5})'.format(emp_no, birth_date, first_name, last_name, gender, hire_date)
+	return '({0}, "{1}", "{2}", "{3}", "{4}", "{5}")'.format(emp_no, birth_date, first_name, last_name, gender, hire_date)
 
 def query(q, params=()):
-	cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='192.168.0.174', database='employees')
-	#cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='10.0.0.10', port=4242, database='employees')
-	# buffered to avoid "Unread result found"
-	# see https://stackoverflow.com/questions/29772337/python-mysql-connector-unread-result-found-when-using-fetchone
-	cursor = cnx.cursor(buffered=True)
-	start_time = time.time()
-	#log('start time: '+str(start_time))
-	cursor.execute(q, params)
-	cnx.commit()
-
-	#log('closing')
-	cursor.close()
-	cnx.close()
-	end_time = time.time()
-	#log('end time: '+str(end_time))
+	try:
+		cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='192.168.0.174', database='employees')
+		#cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='10.0.0.10', port=4242, database='employees')
+		# buffered to avoid "Unread result found"
+		# see https://stackoverflow.com/questions/29772337/python-mysql-connector-unread-result-found-when-using-fetchone
+		cursor = cnx.cursor(buffered=True)
+		start_time = time.time()
+		#log('start time: '+str(start_time))
+		cursor.execute(q, params)
+		cnx.commit()
+	# catch Duplicate entry errors (id is random and collisions are possible)
+	except mc.errors.IntegrityError as e:
+		if not 'Duplicate' in e.msg:
+			print(e.msg)
+	finally:
+		#log('closing')
+		cursor.close()
+		cnx.close()
+		end_time = time.time()
+		#log('end time: '+str(end_time))
 	return end_time-start_time
 
 def last_emp_no():
@@ -197,7 +192,7 @@ def last_emp_no():
 	return emp_no
 
 def clean():
-	query('DELETE FROM employees.salaries WHERE salary=123')
+	query('DELETE FROM employees.employees WHERE emp_no>499999')
 
 if __name__ == "__main__":
 	experiment()
