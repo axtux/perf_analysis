@@ -12,18 +12,19 @@ def log(s):
 
 def experiment():
 	log('task 1')
-	queries = [(1, 'tomato'), (2, 'darkslateblue'), (3, 'darkturquoise')]
+	queries = [(1, 'tomato'), (2, 'darkslateblue'), (3, 'darkturquoise'), (4, 'darkgreen')]
+	queries = [(3, 'darkturquoise')]
 
-	number_querries = 70
+	number_querries = 420
 	warmup_threshold = 20
-	lambdas = [0.1, 0.15, 0.2, 0.3, 0.5, 1]
+	lambdas = [0.01, 0.1, 0.15, 0.2, 0.3, 0.5, 1]
 
 	plt.figure()
 	for l in lambdas:
 		print('Currently proceding to lambda: '+str(l))
 		wait_times = np.random.exponential(scale=l,size=number_querries)
 		for q, c in queries:
-			label = 'Query type '+str(q)
+			label = '\tQuery type '+str(q)
 			print(label+': ', end='', flush=True)
 			#(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
 			(queries_per_second, res_time) = threaded_queries(q, wait_times, warmup_threshold)
@@ -138,6 +139,12 @@ def query_n(n):
 		params = (numberOfRows, startRow)
 
 	elif n == 3:
+		# single entry with index
+		q = 'SELECT * FROM employees.employees WHERE emp_no > %s ORDER BY emp_no LIMIT 1'
+		next_no = randint(10001, 500000)
+		params = (next_no,)
+
+	elif n == 4:
 		values = emp_values()
 		# insert multiple entries in one request
 		for i in range(100):
@@ -160,6 +167,8 @@ def emp_values():
 	return '({0}, "{1}", "{2}", "{3}", "{4}", "{5}")'.format(emp_no, birth_date, first_name, last_name, gender, hire_date)
 
 def query(q, params=()):
+	cnx = None
+	cursor = None
 	try:
 		cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='192.168.0.174', database='employees')
 		#cnx = mc.connect(user='test', password='s0oObGX2oIZeGZ8', host='10.0.0.10', port=4242, database='employees')
@@ -176,8 +185,10 @@ def query(q, params=()):
 			print(e.msg)
 	finally:
 		#log('closing')
-		cursor.close()
-		cnx.close()
+		if not cursor is None:
+			cursor.close()
+		if not cnx is None:
+			cnx.close()
 		end_time = time.time()
 		#log('end time: '+str(end_time))
 	return end_time-start_time
