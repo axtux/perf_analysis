@@ -1,5 +1,6 @@
 import mysql.connector as mc
 import numpy as np
+from numpy.random import randint
 import time
 from threading import Thread
 import matplotlib.pyplot as plt
@@ -12,7 +13,7 @@ def log(s):
 def experiment():
 	log('task 1')
 	queries = [(1, 'tomato'), (2, 'darkslateblue'), (3, 'darkturquoise')]
-	queries = [(1, 'tomato')]
+	queries = [(30, 'tomato')]
 
 	number_querries = 70
 	warmup_threshold = 20
@@ -127,22 +128,28 @@ def threaded_queue(query, wait_times, warmup_threshold):
 def query_n(n):
 	if n == 1:
 		q = 'SELECT AVG(t.salary) FROM (SELECT salary FROM employees.salaries LIMIT %s OFFSET %s) as t'
-		numberOfRows = np.random.randint(10, 100)
-		startRow = np.random.randint(1, 2844047-numberOfRows) # count = 2844047
+		numberOfRows = randint(10, 100)
+		startRow = randint(1, 2844047-numberOfRows) # count = 2844047
 		params = (numberOfRows, startRow)
 
 	elif n == 2:
 		q = 'SELECT * FROM employees.salaries LIMIT %s OFFSET %s'
-		numberOfRows = np.random.randint(10, 100)
-		startRow = np.random.randint(1, 2844047-numberOfRows) # count = 2844047
+		numberOfRows = randint(10, 100)
+		startRow = randint(1, 2844047-numberOfRows) # count = 2844047
 		params = (numberOfRows, startRow)
 
 	elif n == 3:
 		q = 'INSERT INTO employees.salaries VALUES (%s,123,%s,%s)'
-		from_where = datetime.date(1999, 1, 1) # TODO MAYBE CHANGE THAT.
-		to_where = datetime.date(1999, 12, 31)
-		employeeNumber = np.random.randint(10001, 500000)
+		from_where = str(np.datetime64('1985-01-01') + randint(365*20))
+		to_where = str(np.datetime64('1985-01-01') + randint(365*20))
+		employeeNumber = randint(10001, 500000)
 		params = (employeeNumber, from_where, to_where)
+
+	elif n == 30:
+		acc = 0
+		for i in range(10):
+			acc += query_n(3)
+		return acc
 
 	else:
 		print('Querry number {0} not handled'.format(n))
