@@ -4,6 +4,7 @@ import time
 from threading import Thread
 import matplotlib.pyplot as plt
 import datetime
+import queue
 
 def log(s):
 	print(s)
@@ -13,9 +14,9 @@ def experiment():
 	queries = [(1, 'tomato'), (2, 'darkslateblue'), (3, 'darkturquoise')]
 	queries = [(1, 'tomato')]
 
-	number_querries = 120
+	number_querries = 70
 	warmup_threshold = 20
-	lambdas = [0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 1]
+	lambdas = [0.1, 0.15, 0.2, 0.3, 0.5, 1]
 
 	plt.figure()
 	for l in lambdas:
@@ -46,6 +47,9 @@ def plot_times(times):
 	plt.grid(True)
 	plt.show()
 
+def thread_query(n, results, i):
+	results[i] = query_n(n)
+
 def threaded_queries(q, wait_times, warmup_threshold):
 	n = len(wait_times)
 	results = np.zeros(n)
@@ -67,48 +71,58 @@ def threaded_queries(q, wait_times, warmup_threshold):
 	queries_per_sec = n/(end_time-start_time)
 	return (queries_per_sec, res_time)
 
-def threaded_queue(q, wait_times, warmup_threshold):
+
+def queue_worker(requests_queue, waiting_time, service_time):
+	while True:
+		req = requests_queue.get()
+		if req is None:
+			return
+
+		(i, query, start_time) = req
+		waiting_time[i] = time.time()-start_time
+		service_time[i] = query_n(query)
+
+def threaded_queue(query, wait_times, warmup_threshold):
 	n = len(wait_times)
-	results = np.zeros(n)
 	waiting_time = np.zeros(n)
 	service_time = np.zeros(n)
-
-	cumulative_wait_times = []
-	acc = 0
-	for t in wait_times:
-		acc += t
-		cumulative_wait_times.append(acc)
-
 	#plot_times(wait_times)
-	#plot_times(cumulative_wait_times)
+	workers = []
+	requests_queue = queue.Queue()
+
+	# start workers
+	N_WORKERS = 2
+	for i in range(N_WORKERS):
+		w = Thread(target=queue_worker, args=(requests_queue, waiting_time, service_time))
+		w.start()
+		workers.append(w)
+
 	# start requests
 	start_time = time.time()
-	for i, t in zip(range(n), cumulative_wait_times):
-		passed = time.time()-start_time
-		to_wait = t-passed
-		if to_wait > 0:
-			time.sleep(to_wait)
-			waiting_time[i] = 0
-		else:
-			waiting_time[i] = -to_wait
+	for i, t in zip(range(n), wait_times):
+		requests_queue.put((i, query, time.time()))
+		time.sleep(t)
+	elapsed = time.time()-start_time
+	print('queued, ', end='', flush=True)
 
-		service_time[i] = query_n(q)
-		results[i] = service_time[i] + waiting_time[i]
+	# end signal
+	for i in range(N_WORKERS):
+		requests_queue.put(None)
+	# wait for workers to finish
+	for w in workers:
+		w.join()
+	print('finished, ', end='', flush=True)
 
 	# make stats
-	log(waiting_time)
-	log(service_time)
+	#log(waiting_time)
+	#log(service_time)
 
 	avg_waiting_time = np.mean(waiting_time[warmup_threshold:])
 	avg_service_time = np.mean(service_time[warmup_threshold:])
 	print('awt {:.3f}s, ast {:.3f}s, '.format(avg_waiting_time, avg_service_time), end='')
-	res_time = np.mean(results[warmup_threshold:])
-	queries_per_sec = n/cumulative_wait_times[-1:][0]
-	return (queries_per_sec, res_time)
+	queries_per_sec = n/elapsed
+	return (queries_per_sec, avg_waiting_time+avg_service_time)
 
-
-def thread_query(n, results, i):
-	results[i] = query_n(n)
 
 def query_n(n):
 	if n == 1:
