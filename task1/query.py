@@ -21,14 +21,15 @@ def threaded_queries(q, wait_times, warmup_threshold):
 		threads.append(thread)
 		thread.start()
 		time.sleep(t)
-	end_time = time.time()
+	total_time = time.time()-start_time
+	#print('total time: '+str(total_time)+', wanted time: '+str(np.sum(wait_times)))
 	# wait for requests to finish
 	for thread in threads:
 		thread.join()
 	# make stats
 	#log(results)
 	res_time = np.mean(results[warmup_threshold:])
-	queries_per_sec = n/(end_time-start_time)
+	queries_per_sec = n/total_time
 	return (queries_per_sec, res_time)
 
 def query_n(n):
@@ -100,6 +101,3 @@ def query(q, params=()):
 
 def clean():
 	query('DELETE FROM employees.employees WHERE emp_no>499999')
-
-if __name__ == "__main__":
-	experiment()
