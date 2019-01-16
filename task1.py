@@ -9,7 +9,6 @@ def log(s):
 
 def experiment():
 	log('task 1')
-	colors = ['tomato', 'darkslateblue', 'darkturquoise', 'darkgreen']
 
 	a_qps = {}
 	a_avg = {}
@@ -39,7 +38,7 @@ def experiment():
 			# let server catch up
 			time.sleep(2)
 
-	for q, c in zip(query.QUERIES, colors):
+	for q, c in zip(query.QUERIES, config.COLORS):
 		plt.errorbar(a_qps[q], a_avg[q], c=c, marker='.', label='Query type '+str(q), yerr=(a_low[q], a_high[q]))
 	print('\nLaTeX tab:')
 	for l, i in zip(config.LAMBDAS, range(len(config.LAMBDAS))):
