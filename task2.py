@@ -5,21 +5,17 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 
-def simulated_queue():
-	
+import config
 
-	number_querries = 20
-	warmup_threshold = 10
-	
-	lambdas = [0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 1]
-	#lambdas = [0.05,0.06]
+def simulated_queue():
+
 	process_times = [0.05,0.07,0.1]
 	colors = ['tomato','darkslateblue','darkturquoise']
-	average_time_array = np.zeros((len(process_times),len(lambdas)))
-	number_querries_per_second = np.zeros(len(lambdas))
+	average_time_array = np.zeros((len(process_times),len(config.LAMBDAS)))
+	number_querries_per_second = np.zeros(len(config.LAMBDAS))
 	index = 0
-	for l in lambdas:
-		wait_times = np.random.exponential(scale=l,size=number_querries)
+	for l in config.LAMBDAS:
+		wait_times = np.random.exponential(scale=l,size=config.N_QUERIES)
 		for q_t in range(len(process_times)):
 			print('Currently proceding to lambda {0} and query type {1}'.format(l,q_t))
 			q_server = queue.Queue()
@@ -35,10 +31,10 @@ def simulated_queue():
 				q_server.put((query_number,sending_time))
 				query_number += 1
 			time_total_elapsed = time.time() - time_beg_total
-			number_querries_per_second[index] += number_querries/(time_total_elapsed*len(process_times))
-			q_server.put(('end',0)) 
+			number_querries_per_second[index] += config.N_QUERIES/(time_total_elapsed*len(process_times))
+			q_server.put(('end',0))
 			print('done with sending\n\n')
-			counter = -warmup_threshold
+			counter = -config.THRESHOLD
 			acc = 0
 
 			while True :
