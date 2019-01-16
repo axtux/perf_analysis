@@ -1,4 +1,6 @@
 
+COLORS = ['tomato','darkslateblue','darkturquoise','forestgreen']
+
 USER = 'test'
 PWD = 's0oObGX2oIZeGZ8'
 HOST = '192.168.0.174'
