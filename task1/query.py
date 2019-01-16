@@ -3,6 +3,7 @@ import numpy as np
 from numpy.random import randint
 import time
 from threading import Thread
+
 import config
 
 QUERIES = [1, 2, 3, 4]
@@ -26,11 +27,10 @@ def threaded_queries(q, wait_times, warmup_threshold):
 	# wait for requests to finish
 	for thread in threads:
 		thread.join()
-	# make stats
-	#log(results)
-	res_time = np.mean(results[warmup_threshold:])
-	queries_per_sec = n/total_time
-	return (queries_per_sec, res_time)
+	# remove threshold
+	res = results[warmup_threshold:]
+	# return (q/s, min, avg, max)
+	return (n/total_time, np.min(res), np.mean(res), np.max(res))
 
 def query_n(n):
 	if n == 1:
