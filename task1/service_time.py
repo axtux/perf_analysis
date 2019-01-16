@@ -18,3 +18,10 @@ def service_time(n):
 
 if __name__ == "__main__":
 	service_time(20)
+
+""" Result
+Query type 1: min/avg/max = 0.020/0.691/1.016
+Query type 2: min/avg/max = 0.029/0.557/1.272
+Query type 3: min/avg/max = 0.010/0.012/0.015
+Query type 4: min/avg/max = 0.022/0.025/0.029
+"""
