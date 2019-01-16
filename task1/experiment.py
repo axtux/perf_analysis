@@ -13,12 +13,14 @@ def experiment():
 
 	a_qps = {}
 	a_avg = {}
-	a_errors = {}
+	a_low = {}
+	a_high = {}
 	# create one tab per query
 	for q in query.QUERIES:
 		a_qps[q] = []
 		a_avg[q] = []
-		a_errors[q] = []
+		a_low[q] = []
+		a_high[q] = []
 
 	plt.figure()
 	for l in config.LAMBDAS:
@@ -32,12 +34,13 @@ def experiment():
 			# TODO add error bars https://matplotlib.org/api/_as_gen/matplotlib.pyplot.errorbar.html
 			a_qps[q].append(qps)
 			a_avg[q].append(avg)
-			a_errors[q].append((avg-min, max-avg))
+			a_low[q].append(avg-min)
+			a_high[q].append(max-avg)
 			# let server catch up
 			time.sleep(2)
 
 	for q, c in zip(query.QUERIES, colors):
-		plt.errorbar(a_qps[q], a_avg[q], c=c, marker='.', label='Query type '+str(q), yerr=a_errors[q])
+		plt.errorbar(a_qps[q], a_avg[q], c=c, marker='.', label='Query type '+str(q), yerr=(a_low[q], a_high[q]))
 	print('\nLaTeX tab:')
 	for l, i in zip(config.LAMBDAS, range(len(config.LAMBDAS))):
 		print('\t'+str(l)+' & '+str('{:.3f}'.format(a_qps[1][i])), end='')
